@@ -457,21 +457,21 @@ impl Shell {
                     .status()?;
             }
             _ => {
-                println!("{} {} {:>8} {:>8} {}", 
+                println!("{} {} {:>8} {:>19} {}", 
                     "Type",
                     "Perms",
                     "Size",
                     "Modified",
                     "Name"
                 );
-                println!("{} {} {:>8} {:>8} {}", 
+                println!("{} {} {:>8} {:>19} {}", 
                     "----",
                     "-----",
                     "----",
-                    "--------",
+                    "-------------------",
                     "----"
                 );
-
+    
                 for entry in fs::read_dir(path)? {
                     let entry = entry?;
                     let metadata = entry.metadata()?;
@@ -483,13 +483,18 @@ impl Shell {
                     let permissions = "N/A".to_string();
                     
                     let size = metadata.len();
-                    let modified = metadata.modified()?.elapsed().unwrap_or_default().as_secs();
+                    
+                    // Format the last modified time
+                    let modified = metadata.modified()?;
+                    let datetime: chrono::DateTime<chrono::Local> = modified.into();
+                    let formatted_time = datetime.format("%Y-%m-%d %H:%M:%S").to_string();
+                    
                     let name = entry.file_name();
-                    println!("{:4} {:5} {:8} {:>8}s {:}", 
+                    println!("{:4} {:5} {:8} {} {}", 
                         file_type, 
                         permissions, 
                         size, 
-                        modified,
+                        formatted_time,
                         name.to_string_lossy()
                     );
                 }
