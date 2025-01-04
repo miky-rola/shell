@@ -241,19 +241,30 @@ impl Shell {
             self.execute_piped_commands(&commands)
         } else {
             let tokens = &commands[0];
+            if tokens.is_empty() {
+                return Ok(());
+            }
+
             let command = &tokens[0];
             let args = &tokens[1..];
 
             let (args, output_file) = self.check_redirection(args);
 
-            // Handle OS-specific command mappings
-            let (command, args) = self.map_command(command, &args);
-
-            if let Some(builtin) = self.builtins.get(&command) {
-                builtin(self, &args.iter().map(|s| s.to_string()).collect::<Vec<_>>())
-            } else {
-                self.execute_external_command(&command, &args, output_file)
+            // First, check if it's a builtin command using the original command name
+            if let Some(builtin) = self.builtins.get(command) {
+                return builtin(self, &args.iter().map(|s| s.to_string()).collect::<Vec<_>>());
             }
+
+            // If not a builtin, map the command for the current OS
+            let (mapped_command, mapped_args) = self.map_command(command, &args);
+            
+            // After mapping, check again if it's now a builtin
+            if let Some(builtin) = self.builtins.get(&mapped_command) {
+                return builtin(self, &mapped_args.iter().map(|s| s.to_string()).collect::<Vec<_>>());
+            }
+
+            // Finally, execute as external command
+            self.execute_external_command(&mapped_command, &mapped_args, output_file)
         }
     }
 
@@ -329,8 +340,8 @@ impl Shell {
     fn map_command(&self, command: &str, args: &[String]) -> (String, Vec<String>) {
         match self.shell_type {
             ShellType::Windows => match command {
-                "ls" => ("dir".to_string(), vec!["/W".to_string()]),
-                "clear" => ("cls".to_string(), vec![]),
+                "ls" => ("cmd".to_string(), vec!["/C".to_string(), "dir".to_string(), "/W".to_string()]),
+                "clear" => ("cmd".to_string(), vec!["/C".to_string(), "cls".to_string()]),
                 "rm" => ("del".to_string(), args.to_vec()),
                 "cp" => ("copy".to_string(), args.to_vec()),
                 "mv" => ("move".to_string(), args.to_vec()),
