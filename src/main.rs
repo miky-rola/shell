@@ -99,7 +99,8 @@ impl Shell {
 
     fn get_prompt(&self) -> String {
         let display_path = self.format_display_path();
-        let username = self.env_vars.get("USER").unwrap_or(&String::from("user"));
+        let default_user = String::from("user");
+        let username = self.env_vars.get("USER").unwrap_or(&default_user);
         let hostname = hostname::get().unwrap_or_default().to_string_lossy().to_string();
 
         match self.shell_type {
@@ -448,7 +449,13 @@ impl Shell {
                     let entry = entry?;
                     let metadata = entry.metadata()?;
                     let file_type = if metadata.is_dir() { "d" } else { "-" };
+                    
+                    // Use platform-specific permission handling
+                    #[cfg(unix)]
                     let permissions = format!("{:o}", metadata.permissions().mode() & 0o777);
+                    #[cfg(not(unix))]
+                    let permissions = "N/A".to_string();
+                    
                     let size = metadata.len();
                     let modified = metadata.modified()?.elapsed().unwrap_or_default().as_secs();
                     let name = entry.file_name();
