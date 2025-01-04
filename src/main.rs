@@ -6,12 +6,14 @@ use std::io::{self, Write, Read};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+
 #[derive(Debug)]
 struct Shell {
     current_dir: PathBuf,
     env_vars: HashMap<String, String>,
     builtins: HashMap<String, fn(&mut Shell, &[String]) -> io::Result<()>>,
 }
+
 
 impl Shell {
     fn new() -> io::Result<Shell> {
@@ -32,6 +34,7 @@ impl Shell {
             builtins,
         })
     }
+
 
     fn run(&mut self) -> io::Result<()> {
         println!("Shell is running. Type 'exit' to quit."); 
@@ -58,6 +61,7 @@ impl Shell {
                 }
             }
 
+
             let input = input.trim();
             println!("Received input: '{}'", input); 
 
@@ -77,6 +81,7 @@ impl Shell {
         Ok(())
     }
 
+    
     fn parse_command(&self, input: &str) -> Vec<String> {
         let mut tokens = Vec::new();
         let mut current_token = String::new();
