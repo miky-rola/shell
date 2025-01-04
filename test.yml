@@ -4,8 +4,6 @@
 # unless you really need them.
 debug: true
 
-# Use this to change the Rust version used to run your code
-# on Codecrafters.
-#
+
 # Available versions: rust-1.82
 language_pack: rust-1.82
