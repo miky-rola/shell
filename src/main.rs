@@ -27,6 +27,7 @@ struct Shell {
     history_file: PathBuf,
 }
 
+
 impl Shell {
     fn new(shell_type: ShellType) -> io::Result<Shell> {
         println!("Initializing {} shell...", match shell_type {
