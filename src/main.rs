@@ -445,12 +445,26 @@ impl Shell {
                     .status()?;
             }
             _ => {
+                println!("{} {} {:>8} {:>8} {}", 
+                    "Type",
+                    "Perms",
+                    "Size",
+                    "Modified",
+                    "Name"
+                );
+                println!("{} {} {:>8} {:>8} {}", 
+                    "----",
+                    "-----",
+                    "----",
+                    "--------",
+                    "----"
+                );
+
                 for entry in fs::read_dir(path)? {
                     let entry = entry?;
                     let metadata = entry.metadata()?;
                     let file_type = if metadata.is_dir() { "d" } else { "-" };
                     
-                    // Use platform-specific permission handling
                     #[cfg(unix)]
                     let permissions = format!("{:o}", metadata.permissions().mode() & 0o777);
                     #[cfg(not(unix))]
@@ -459,7 +473,7 @@ impl Shell {
                     let size = metadata.len();
                     let modified = metadata.modified()?.elapsed().unwrap_or_default().as_secs();
                     let name = entry.file_name();
-                    println!("{} {} {:8} {:8}s ago {}", 
+                    println!("{:4} {:5} {:8} {:>8}s {:}", 
                         file_type, 
                         permissions, 
                         size, 
@@ -471,6 +485,7 @@ impl Shell {
         }
         Ok(())
     }
+
 
     fn type_cmd(&mut self, args: &[String]) -> io::Result<()> {
         if args.is_empty() {
