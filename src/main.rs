@@ -7,6 +7,8 @@ use std::path::{Path, PathBuf, Component};
 use std::process::{Command, Stdio};
 use dirs;
 use hostname;
+extern crate filetime;
+use filetime::FileTime;
 
 
 #[derive(Debug, Clone, PartialEq)]
@@ -47,6 +49,9 @@ impl Shell {
         builtins.insert("which".to_string(), Shell::which as fn(&mut Shell, &[String]) -> io::Result<()>);
         builtins.insert("history".to_string(), Shell::history as fn(&mut Shell, &[String]) -> io::Result<()>);
         builtins.insert("source".to_string(), Shell::source as fn(&mut Shell, &[String]) -> io::Result<()>);
+        builtins.insert("cat".to_string(), Shell::cat as fn(&mut Shell, &[String]) -> io::Result<()>);
+        builtins.insert("mkdir".to_string(), Shell::mkdir as fn(&mut Shell, &[String]) -> io::Result<()>);
+        builtins.insert("touch".to_string(), Shell::touch as fn(&mut Shell, &[String]) -> io::Result<()>);
 
         let current_dir = env::current_dir()?;
         let home_dir = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/"));
@@ -422,6 +427,99 @@ impl Shell {
         Ok(())
     }
 
+    fn touch(&mut self, args: &[String]) -> io::Result<()> {
+        if args.is_empty() {
+            eprintln!("touch: missing file operand");
+            return Ok(());
+        }
+    
+        for file_name in args {
+            let path = Path::new(file_name);
+            if path.exists() {
+                // Update the file's modification and access times
+                let now = filetime::FileTime::now();
+                if let Err(e) = filetime::set_file_mtime(path, now) {
+                    eprintln!("touch: failed to update times for '{}': {}", file_name, e);
+                }
+            } else {
+                // Create a new empty file
+                if let Err(e) = File::create(path) {
+                    eprintln!("touch: failed to create '{}': {}", file_name, e);
+                }
+            }
+        }
+        Ok(())
+    }
+    
+
+    // fn tab_complete(&self, input: &str) -> io::Result<String> {
+    //     let path = Path::new(input);
+    //     let parent = path.parent().unwrap_or(Path::new("."));
+    //     let prefix = path.file_name().unwrap_or_else(|| input.as_ref());
+    
+    //     let entries = fs::read_dir(parent)?
+    //         .filter_map(Result::ok)
+    //         .filter(|entry| {
+    //             if let Some(file_name) = entry.file_name().to_str() {
+    //                 file_name.starts_with(prefix)
+    //             } else {
+    //                 false
+    //             }
+    //         })
+            
+    //         .collect::<Vec<_>>();
+    
+    //     if entries.len() == 1 {
+    //         let mut completion = parent.to_path_buf();
+    //         completion.push(entries[0].file_name());
+    //         Ok(completion.display().to_string())
+    //     } else if entries.len() > 1 {
+    //         for entry in entries {
+    //             println!("{}", entry.file_name().to_string_lossy());
+    //         }
+    //         Ok(input.to_string())
+    //     } else {
+    //         Ok(input.to_string())
+    //     }
+    // }
+
+    fn cat(&mut self, args: &[String]) -> io::Result<()> {
+        if args.is_empty() {
+            eprintln!("cat: missing file operand");
+            return Ok(());
+        }
+    
+        for file_name in args {
+            let path = Path::new(file_name);
+            if path.exists() {
+                let file = File::open(path)?;
+                let reader = BufReader::new(file);
+                for line in reader.lines() {
+                    println!("{}", line?);
+                }
+            } else {
+                eprintln!("cat: {}: No such file or directory", file_name);
+            }
+        }
+        Ok(())
+    }
+    
+    
+    fn mkdir(&mut self, args: &[String]) -> io::Result<()> {
+        if args.is_empty() {
+            eprintln!("mkdir: missing operand");
+            return Ok(());
+        }
+    
+        for dir_name in args {
+            let path = Path::new(dir_name);
+            if let Err(e) = fs::create_dir(path) {
+                eprintln!("mkdir: cannot create directory '{}': {}", dir_name, e);
+            }
+        }
+        Ok(())
+    }
+    
     fn env(&mut self, _args: &[String]) -> io::Result<()> {
         for (key, value) in &self.env_vars {
             println!("{}={}", key, value);
