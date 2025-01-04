@@ -452,36 +452,36 @@ impl Shell {
     }
     
 
-    // fn tab_complete(&self, input: &str) -> io::Result<String> {
-    //     let path = Path::new(input);
-    //     let parent = path.parent().unwrap_or(Path::new("."));
-    //     let prefix = path.file_name().unwrap_or_else(|| input.as_ref());
+    fn tab_complete(&self, input: &str) -> io::Result<String> {
+        let path = Path::new(input);
+        let parent = path.parent().unwrap_or(Path::new("."));
+        let prefix = path.file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or(input);
     
-    //     let entries = fs::read_dir(parent)?
-    //         .filter_map(Result::ok)
-    //         .filter(|entry| {
-    //             if let Some(file_name) = entry.file_name().to_str() {
-    //                 file_name.starts_with(prefix)
-    //             } else {
-    //                 false
-    //             }
-    //         })
-            
-    //         .collect::<Vec<_>>();
+        let entries = fs::read_dir(parent)?
+            .filter_map(Result::ok)
+            .filter(|entry| {
+                entry.file_name()
+                    .to_str()
+                    .map(|name| name.starts_with(prefix))
+                    .unwrap_or(false)
+            })
+            .collect::<Vec<_>>();
     
-    //     if entries.len() == 1 {
-    //         let mut completion = parent.to_path_buf();
-    //         completion.push(entries[0].file_name());
-    //         Ok(completion.display().to_string())
-    //     } else if entries.len() > 1 {
-    //         for entry in entries {
-    //             println!("{}", entry.file_name().to_string_lossy());
-    //         }
-    //         Ok(input.to_string())
-    //     } else {
-    //         Ok(input.to_string())
-    //     }
-    // }
+        if entries.len() == 1 {
+            let mut completion = parent.to_path_buf();
+            completion.push(entries[0].file_name());
+            Ok(completion.display().to_string())
+        } else if entries.len() > 1 {
+            for entry in entries {
+                println!("{}", entry.file_name().to_string_lossy());
+            }
+            Ok(input.to_string())
+        } else {
+            Ok(input.to_string())
+        }
+    }
 
     fn cat(&mut self, args: &[String]) -> io::Result<()> {
         if args.is_empty() {
