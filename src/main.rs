@@ -7,8 +7,8 @@ use std::path::{Path, PathBuf, Component};
 use std::process::{Command, Stdio};
 use dirs;
 use hostname;
-extern crate filetime;
-use filetime::FileTime;
+use chrono;
+
 
 
 #[derive(Debug, Clone, PartialEq)]
@@ -17,6 +17,8 @@ enum ShellType {
     MacOS,
     Windows,
 }
+
+
 
 #[derive(Debug)]
 struct Shell {
@@ -449,38 +451,6 @@ impl Shell {
             }
         }
         Ok(())
-    }
-    
-
-    fn tab_complete(&self, input: &str) -> io::Result<String> {
-        let path = Path::new(input);
-        let parent = path.parent().unwrap_or(Path::new("."));
-        let prefix = path.file_name()
-            .and_then(|s| s.to_str())
-            .unwrap_or(input);
-    
-        let entries = fs::read_dir(parent)?
-            .filter_map(Result::ok)
-            .filter(|entry| {
-                entry.file_name()
-                    .to_str()
-                    .map(|name| name.starts_with(prefix))
-                    .unwrap_or(false)
-            })
-            .collect::<Vec<_>>();
-    
-        if entries.len() == 1 {
-            let mut completion = parent.to_path_buf();
-            completion.push(entries[0].file_name());
-            Ok(completion.display().to_string())
-        } else if entries.len() > 1 {
-            for entry in entries {
-                println!("{}", entry.file_name().to_string_lossy());
-            }
-            Ok(input.to_string())
-        } else {
-            Ok(input.to_string())
-        }
     }
 
     fn cat(&mut self, args: &[String]) -> io::Result<()> {
