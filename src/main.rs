@@ -1,7 +1,8 @@
+#[warn(unused_imports)]
 use std::collections::HashMap;
 use std::env;
 use std::fs::{self, File};
-use std::io::{self, Write, Read, BufReader, BufRead};
+use std::io::{self, Write, BufReader, BufRead};
 use std::path::{Path, PathBuf, Component};
 use std::process::{Command, Stdio};
 use dirs;
