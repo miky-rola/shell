@@ -7,11 +7,6 @@ use std::process::{Command, Stdio};
 use dirs;
 use hostname;
 
-// Dependencies for Cargo.toml:
-// [dependencies]
-// dirs = "5.0"
-// hostname = "0.3"
-// which = "4.4"
 
 #[derive(Debug, Clone, PartialEq)]
 enum ShellType {
