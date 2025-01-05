@@ -9,7 +9,6 @@ use hostname;
 
 use crate::shell_type::ShellType;
 
-/// Represents a shell environment with its state and built-in commands
 pub struct Shell {
     pub shell_type: ShellType,
     pub current_dir: PathBuf,
@@ -22,7 +21,6 @@ pub struct Shell {
 
 impl Shell {
    
-    /// Returns Ok(Shell) if initialization succeeds, or an error if any step fails
     pub fn new(shell_type: ShellType) -> io::Result<Shell> {
         println!("Initializing {} shell...", match shell_type {
             ShellType::Linux => "Linux",
@@ -30,7 +28,6 @@ impl Shell {
             ShellType::Windows => "Windows",
         });
 
-        // Initialize built-in command handlers
         let mut builtins = HashMap::new();
         builtins.insert("cd".to_string(), Shell::cd as fn(&mut Shell, &[String]) -> io::Result<()>);
         builtins.insert("echo".to_string(), Shell::echo as fn(&mut Shell, &[String]) -> io::Result<()>);
@@ -168,7 +165,6 @@ impl Shell {
         Ok(())
     }
  
-    /// Skips empty commands and handles save errors
     fn add_to_history(&mut self, command: &str) {
         if !command.trim().is_empty() {
             self.history.push(command.to_string());
