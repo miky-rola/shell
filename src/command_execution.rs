@@ -111,10 +111,8 @@ impl Shell {
                 return builtin(self, &args.iter().map(|s| s.to_string()).collect::<Vec<_>>());
             }
 
-            // If not a builtin, map the command for the current OS
             let (mapped_command, mapped_args) = self.map_command(command, &args);
             
-            // After mapping, check again if it's now a builtin
             if let Some(builtin) = self.builtins.get(&mapped_command) {
                 return builtin(self, &mapped_args.iter().map(|s| s.to_string()).collect::<Vec<_>>());
             }
