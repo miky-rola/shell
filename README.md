@@ -7,7 +7,6 @@ A lightweight, cross-platform shell implementation written in Rust. This shell p
 - Cross-platform support (Linux, macOS, Windows)
 - Built-in commands implementation
 - Command history with persistence
-- Tab completion for commands and file paths
 - Environment variable support
 - Platform-specific command prompts
 - Directory navigation with path normalization
