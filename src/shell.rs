@@ -167,9 +167,7 @@ impl Shell {
         }
         Ok(())
     }
-
-    /// Adds a command to the history and saves it to the history file
-    /// 
+ 
     /// Skips empty commands and handles save errors
     fn add_to_history(&mut self, command: &str) {
         if !command.trim().is_empty() {
@@ -182,7 +180,6 @@ impl Shell {
 
     /// Normalizes a path by resolving parent directory references (..)
     /// and removing redundant components
-    /// 
     /// Returns a cleaned up PathBuf
     pub fn normalize_path(&self, path: &Path) -> PathBuf {
         let mut components = Vec::new();
