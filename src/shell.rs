@@ -6,7 +6,8 @@ use std::io::{self, Write, BufReader, BufRead};
 use std::path::{Path, PathBuf, Component};
 use dirs;
 use hostname;
-
+use std::fs;
+use glob::Pattern;
 use crate::shell_type::ShellType;
 
 pub struct Shell {
@@ -42,7 +43,11 @@ impl Shell {
         builtins.insert("cat".to_string(), Shell::cat as fn(&mut Shell, &[String]) -> io::Result<()>);
         builtins.insert("mkdir".to_string(), Shell::mkdir as fn(&mut Shell, &[String]) -> io::Result<()>);
         builtins.insert("touch".to_string(), Shell::touch as fn(&mut Shell, &[String]) -> io::Result<()>);
-
+        builtins.insert("grep".to_string(), Shell::grep as fn(&mut Shell, &[String]) -> io::Result<()>);
+        builtins.insert("find".to_string(), Shell::find as fn(&mut Shell, &[String]) -> io::Result<()>);
+        builtins.insert("head".to_string(), Shell::head as fn(&mut Shell, &[String]) -> io::Result<()>);
+        builtins.insert("tail".to_string(), Shell::tail as fn(&mut Shell, &[String]) -> io::Result<()>);
+        
         let current_dir = env::current_dir()?;
         let home_dir = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/"));
         let history_file = home_dir.join(match shell_type {
@@ -188,5 +193,103 @@ impl Shell {
             }
         }
         components.iter().collect()
+    }
+
+    pub fn find(&mut self, args: &[String]) -> io::Result<()> {
+        let dir = args.get(0).map(Path::new).unwrap_or_else(|| Path::new("."));
+        let pattern = args.get(1).map(|s| Pattern::new(s).ok()).flatten();
+
+        Self::find_recursive(dir, pattern.as_ref())?;
+        Ok(())
+    }
+
+    fn find_recursive(dir: &Path, pattern: Option<&Pattern>) -> io::Result<()> {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            
+            if let Some(pattern) = pattern {
+                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    if pattern.matches(name) {
+                        println!("{}", path.display());
+                    }
+                }
+            } else {
+                println!("{}", path.display());
+            }
+
+            if path.is_dir() {
+                Self::find_recursive(&path, pattern)?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn head(&mut self, args: &[String]) -> io::Result<()> {
+        let (file_name, lines) = match args.len() {
+            0 => {
+                eprintln!("Usage: head [-n lines] <file>");
+                return Ok(());
+            }
+            1 => (args[0].as_str(), 10),
+            _ if args[0] == "-n" => {
+                (args[2].as_str(), args[1].parse().unwrap_or(10))
+            }
+            _ => (args[0].as_str(), 10),
+        };
+
+        let file = File::open(file_name)?;
+        let reader = BufReader::new(file);
+        for (i, line) in reader.lines().enumerate() {
+            if i >= lines {
+                break;
+            }
+            println!("{}", line?);
+        }
+        Ok(())
+    }
+
+    pub fn grep(&mut self, args: &[String]) -> io::Result<()> {
+        if args.len() < 2 {
+            eprintln!("Usage: grep <pattern> <file>");
+            return Ok(());
+        }
+
+        let pattern = &args[0];
+        let file_name = &args[1];
+        let file = File::open(file_name)?;
+        let reader = BufReader::new(file);
+
+        for line in reader.lines() {
+            let line = line?;
+            if line.contains(pattern) {
+                println!("{}", line);
+            }
+        }
+        Ok(())
+    }
+
+    pub fn tail(&mut self, args: &[String]) -> io::Result<()> {
+        let (file_name, lines) = match args.len() {
+            0 => {
+                eprintln!("Usage: tail [-n lines] <file>");
+                return Ok(());
+            }
+            1 => (args[0].as_str(), 10),
+            _ if args[0] == "-n" => {
+                (args[2].as_str(), args[1].parse().unwrap_or(10))
+            }
+            _ => (args[0].as_str(), 10),
+        };
+
+        let file = File::open(file_name)?;
+        let reader = BufReader::new(file);
+        let all_lines: Vec<String> = reader.lines().collect::<Result<_, _>>()?;
+        let start = all_lines.len().saturating_sub(lines);
+        
+        for line in &all_lines[start..] {
+            println!("{}", line);
+        }
+        Ok(())
     }
 }
