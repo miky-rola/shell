@@ -1,6 +1,6 @@
 # Rust Shell Implementation
 
-A lightweight, cross-platform shell implementation written in Rust. This shell provides basic command-line functionality with built-in commands and support for external commands, command history, and tab completion.
+A lightweight, cross-platform shell implementation written in Rust. This shell provides basic command-line functionality with built-in commands and support for external commands and command history.
 
 ## Features
 
