@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::{self, Write};
-use std::path::PathBuf;
+// use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use crate::shell::Shell;
 use crate::shell_type::ShellType;
@@ -66,6 +66,62 @@ impl Shell {
         }
 
         (new_args, output_file)
+    }
+
+    pub fn execute_command(&mut self, input: &str) -> io::Result<()> {
+        let tokens = self.parse_command(input);
+        if tokens.is_empty() {
+            return Ok(());
+        }
+
+        // Split commands by pipe
+        let mut commands: Vec<Vec<String>> = Vec::new();
+        let mut current_command = Vec::new();
+
+        for token in tokens {
+            if token == "|" {
+                if !current_command.is_empty() {
+                    commands.push(current_command);
+                    current_command = Vec::new();
+                }
+            } else {
+                current_command.push(token);
+            }
+        }
+        if !current_command.is_empty() {
+            commands.push(current_command);
+        }
+
+        // Execute piped commands
+        if commands.len() > 1 {
+            self.execute_piped_commands(&commands)
+        } else {
+            let tokens = &commands[0];
+            if tokens.is_empty() {
+                return Ok(());
+            }
+
+            let command = &tokens[0];
+            let args = &tokens[1..];
+
+            let (args, output_file) = self.check_redirection(args);
+
+            // First, check if it's a builtin command using the original command name
+            if let Some(builtin) = self.builtins.get(command) {
+                return builtin(self, &args.iter().map(|s| s.to_string()).collect::<Vec<_>>());
+            }
+
+            // If not a builtin, map the command for the current OS
+            let (mapped_command, mapped_args) = self.map_command(command, &args);
+            
+            // After mapping, check again if it's now a builtin
+            if let Some(builtin) = self.builtins.get(&mapped_command) {
+                return builtin(self, &mapped_args.iter().map(|s| s.to_string()).collect::<Vec<_>>());
+            }
+
+            // Finally, execute as external command
+            self.execute_external_command(&mapped_command, &mapped_args, output_file)
+        }
     }
 
     pub fn map_command(&self, command: &str, args: &[String]) -> (String, Vec<String>) {
