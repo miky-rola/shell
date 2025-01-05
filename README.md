@@ -100,11 +100,6 @@ $ echo Hello, World!    # Print text
 - Command history is automatically saved and persists between sessions
 - History file is stored in your home directory as `.shell_history` (Unix) or `.shell_history.txt` (Windows)
 
-### Tab Completion
-
-- Press Tab to complete commands and file paths
-- Double-press Tab to show all available completions
-
 ## Example Session
 
 ```bash
