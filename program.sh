@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Example script with various common shell operations
-# Save this as program.sh and make it executable with: chmod +x program.sh
 
 # Function to display usage
 show_usage() {

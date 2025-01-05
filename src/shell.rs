@@ -1,7 +1,7 @@
 #[warn(unused_imports)]
 use std::collections::HashMap;
 use std::env;
-use std::fs::{self, File};
+use std::fs::File;
 use std::io::{self, Write, BufReader, BufRead};
 use std::path::{Path, PathBuf, Component};
 use dirs;
@@ -9,6 +9,7 @@ use hostname;
 
 use crate::shell_type::ShellType;
 
+/// Represents a shell environment with its state and built-in commands
 pub struct Shell {
     pub shell_type: ShellType,
     pub current_dir: PathBuf,
@@ -20,6 +21,8 @@ pub struct Shell {
 }
 
 impl Shell {
+   
+    /// Returns Ok(Shell) if initialization succeeds, or an error if any step fails
     pub fn new(shell_type: ShellType) -> io::Result<Shell> {
         println!("Initializing {} shell...", match shell_type {
             ShellType::Linux => "Linux",
@@ -27,6 +30,7 @@ impl Shell {
             ShellType::Windows => "Windows",
         });
 
+        // Initialize built-in command handlers
         let mut builtins = HashMap::new();
         builtins.insert("cd".to_string(), Shell::cd as fn(&mut Shell, &[String]) -> io::Result<()>);
         builtins.insert("echo".to_string(), Shell::echo as fn(&mut Shell, &[String]) -> io::Result<()>);
@@ -63,6 +67,8 @@ impl Shell {
         Ok(shell)
     }
 
+    
+    /// The loop continues until 'exit' is entered or EOF is received
     pub fn run(&mut self) -> io::Result<()> {
         println!("Shell is running. Type 'exit' to quit.");
         
@@ -97,8 +103,8 @@ impl Shell {
                 break;
             }
 
+            // Process the command
             self.add_to_history(input);
-
             if let Err(e) = self.execute_command(input) {
                 eprintln!("Error executing command: {}", e);
             }
@@ -106,6 +112,8 @@ impl Shell {
         Ok(())
     }
 
+
+    /// - Shell-specific prompt character ($ for Linux, % for MacOS, > for Windows)
     pub fn get_prompt(&self) -> String {
         let display_path = self.format_display_path();
         let default_user = String::from("user");
@@ -119,6 +127,7 @@ impl Shell {
         }
     }
 
+    /// Formats the current working directory for display in the prompt
     fn format_display_path(&self) -> String {
         let path = self.current_dir.as_path();
         
@@ -134,6 +143,7 @@ impl Shell {
         }
     }
 
+    /// Loads command history from the history file
     fn load_history(&mut self) -> io::Result<()> {
         if self.history_file.exists() {
             let file = File::open(&self.history_file)?;
@@ -147,6 +157,9 @@ impl Shell {
         Ok(())
     }
 
+    /// Saves the current command history to the history file
+    /// 
+    /// Writes each command in the history vector to the file
     fn save_history(&self) -> io::Result<()> {
         let mut file = File::create(&self.history_file)?;
         for command in &self.history {
@@ -155,6 +168,9 @@ impl Shell {
         Ok(())
     }
 
+    /// Adds a command to the history and saves it to the history file
+    /// 
+    /// Skips empty commands and handles save errors
     fn add_to_history(&mut self, command: &str) {
         if !command.trim().is_empty() {
             self.history.push(command.to_string());
@@ -164,6 +180,10 @@ impl Shell {
         }
     }
 
+    /// Normalizes a path by resolving parent directory references (..)
+    /// and removing redundant components
+    /// 
+    /// Returns a cleaned up PathBuf
     pub fn normalize_path(&self, path: &Path) -> PathBuf {
         let mut components = Vec::new();
         for component in path.components() {
