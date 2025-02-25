@@ -92,7 +92,7 @@ impl Shell {
             commands.push(current_command);
         }
 
-        // Execute piped commands
+        // execute the piped commands
         if commands.len() > 1 {
             self.execute_piped_commands(&commands)
         } else {
