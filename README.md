@@ -126,17 +126,6 @@ Hello from Rust Shell!
 - No pipeline operations support yet
 - Limited wildcard expansion
 
-## Future Improvements
-
-- [ ] Add support for command pipelines (`|`)
-- [ ] Implement input/output redirection
-- [ ] Add shell scripting capabilities
-- [ ] Implement job control
-- [ ] Add more built-in commands
-- [ ] Improve tab completion with context awareness
-- [ ] Add alias support
-- [ ] Implement environment variable expansion
-
 
 ## Acknowledgments
 
